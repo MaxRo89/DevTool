@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responsive Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <main class="mat" aria-label="Screens" data-i18n-aria-label="screens">
+    <div class="stage" id="stage">
+      <div class="rack" id="rack"></div>
+    </div>
+
+    <div class="mat-empty" id="mat-empty" hidden>
+      <p data-i18n="emptyTitle">No devices yet.</p>
+      <p data-i18n-html="emptyHint">Use <strong>Add device</strong> to add one.</p>
+    </div>
+
+    <div class="lang-switch" role="group" aria-label="Language" data-i18n-aria-label="language">
+      <button type="button" data-lang="en" lang="en" aria-pressed="true" title="English">EN</button>
+      <button type="button" data-lang="es" lang="es" aria-pressed="false" title="Español">ES</button>
+    </div>
+
+    <div class="mat-footer">
+      <div class="zoom" role="group" aria-label="Zoom" data-i18n-aria-label="zoomGroup">
+        <button type="button" class="zoom-btn" id="zoom-out" aria-label="Zoom out">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10"/></svg>
+        </button>
+        <output class="zoom-value" id="zoom-label" for="zoom-out zoom-in">100%</output>
+        <button type="button" class="zoom-btn" id="zoom-in" aria-label="Zoom in">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 5v10M5 10h10"/></svg>
+        </button>
+        <button type="button" class="zoom-fit" id="zoom-fit" aria-pressed="true" data-i18n="zoomFit">Fit</button>
+      </div>
+      <p class="mat-legend">
+        <span class="mat-legend-cell" aria-hidden="true"></span>
+        <span data-i18n="gridLegend">1 square = 100 px</span>
+      </p>
+      <p class="mat-hint" data-i18n="scrollHint">Scroll on the mat to move every screen at once</p>
+    </div>
+  </main>
+
+  <footer class="ruler">
+    <form class="bar bar-search" id="search-form" role="search" novalidate>
+      <label class="visually-hidden" for="url-input" data-i18n="searchLabel">Page address</label>
+      <svg class="bar-icon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.5 12.5 17 17"/></svg>
+      <input id="url-input" name="url" type="text" inputmode="url" autocomplete="url"
+             spellcheck="false" placeholder="Enter your page URL, e.g. localhost:3000"
+             data-i18n-placeholder="searchPlaceholder">
+      <button type="submit" class="btn btn-quiet" data-i18n="load">Load</button>
+    </form>
+
+    <button type="button" class="bar btn btn-refresh" id="refresh-btn"
+            title="Reload every screen and clear its cookies" data-i18n-title="refreshTitle">
+      <svg class="bar-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.76-4.24"/><path d="M16 3.5v3.2h-3.2"/></svg>
+      <span class="btn-refresh-text" data-i18n="refresh">Refresh</span>
+      <span class="btn-refresh-hint" data-i18n="refreshHint">clears cookies</span>
+    </button>
+
+    <div class="bar bar-add">
+      <button type="button" class="btn btn-add" id="add-btn"
+              aria-haspopup="menu" aria-expanded="false" aria-controls="device-menu">
+        <svg class="bar-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
+        <span data-i18n="addDevice">Add device</span>
+        <svg class="bar-caret" viewBox="0 0 20 20" aria-hidden="true"><path d="m6 12 4-4 4 4"/></svg>
+      </button>
+      <div class="device-menu" id="device-menu" role="menu" aria-label="Devices" data-i18n-aria-label="devicesMenu" hidden></div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script id="devices-data" type="application/json">{{ devices|tojson }}</script>
+  <script id="defaults-data" type="application/json">{{ default_device_ids|tojson }}</script>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+           background: #ECEFED; color: #16201C; font: 16px/1.5 system-ui, sans-serif; }
+    div { max-width: 30ch; padding: 24px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    p { margin: 0 0 8px; }
+    code { font-size: 13px; word-break: break-all; color: #4A5752; }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    {% if url %}<p><code>{{ url }}</code></p>{% endif %}
+  </div>
+</body>
+</html>

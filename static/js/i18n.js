@@ -1,0 +1,123 @@
+/* Interface strings. English is the default language.
+   To add a language, copy the "en" block, translate it and add a button
+   with data-lang="xx" to the language switch in templates/index.html. */
+(function () {
+  "use strict";
+
+  var STRINGS = {
+    en: {
+      screens: "Screens",
+      emptyTitle: "No devices yet.",
+      emptyHint: "Use <strong>Add device</strong> to add one.",
+      gridLegend: "1 square = 100 px",
+      scrollHint: "Scroll on the mat to move every screen at once",
+      zoomValue: "{n}%",
+      zoomGroup: "Zoom",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      zoomFit: "Fit",
+      zoomFitTitle: "Fit all screens",
+      language: "Language",
+      searchLabel: "Page address",
+      searchPlaceholder: "Enter your page URL, e.g. localhost:3000",
+      load: "Load",
+      refresh: "Refresh",
+      refreshHint: "clears cookies",
+      refreshTitle: "Reload every screen and clear its cookies",
+      addDevice: "Add device",
+      devicesMenu: "Devices",
+      placeholder: "Enter a URL below to see it here.",
+      frameTitle: "{name} preview",
+      remove: "Remove {name}",
+      group_phones: "Phones",
+      group_tablets: "Tablets",
+      group_desktop: "Desktop",
+      toastInvalidUrl: "That address isn't valid. Try something like example.com",
+      toastEmptyUrl: "Enter a URL to load it.",
+      toastNoDevices: "Add a device to see the page.",
+      toastClearedNoUrl: "Cookies cleared. Enter a URL to load the screens.",
+      toastCleared: "Cookies cleared. Screens reloaded.",
+      toastResetFailed: "Couldn't clear cookies. Check that the server is still running."
+    },
+    es: {
+      screens: "Pantallas",
+      emptyTitle: "No hay pantallas todavía.",
+      emptyHint: "Usa <strong>Agregar dispositivo</strong> para poner una.",
+      gridLegend: "1 cuadro = 100 px",
+      scrollHint: "Haz scroll en el tapete para mover todas las pantallas a la vez",
+      zoomValue: "{n} %",
+      zoomGroup: "Zoom",
+      zoomIn: "Acercar",
+      zoomOut: "Alejar",
+      zoomFit: "Ajustar",
+      zoomFitTitle: "Ajustar todas las pantallas",
+      language: "Idioma",
+      searchLabel: "Dirección de la página",
+      searchPlaceholder: "Escribe la URL de tu página, por ejemplo localhost:3000",
+      load: "Cargar",
+      refresh: "Refrescar",
+      refreshHint: "borra cookies",
+      refreshTitle: "Recarga todas las pantallas y borra sus cookies",
+      addDevice: "Agregar dispositivo",
+      devicesMenu: "Dispositivos",
+      placeholder: "Escribe una URL abajo para verla aquí.",
+      frameTitle: "Vista en {name}",
+      remove: "Quitar {name}",
+      group_phones: "Teléfonos",
+      group_tablets: "Tablets",
+      group_desktop: "Escritorio",
+      toastInvalidUrl: "Esa dirección no es válida. Prueba con algo como ejemplo.com",
+      toastEmptyUrl: "Escribe una URL para cargarla.",
+      toastNoDevices: "Agrega un dispositivo para ver la página.",
+      toastClearedNoUrl: "Cookies borradas. Escribe una URL para cargar las pantallas.",
+      toastCleared: "Cookies borradas. Pantallas recargadas.",
+      toastResetFailed: "No se pudieron borrar las cookies. Revisa que el servidor siga corriendo."
+    }
+  };
+
+  var DEFAULT_LANG = "en";
+  var STORE_LANG = "rv.lang";
+  var lang = DEFAULT_LANG;
+
+  try {
+    var saved = localStorage.getItem(STORE_LANG);
+    if (saved && STRINGS[saved]) lang = saved;
+  } catch (_e) {}
+
+  function t(key, vars) {
+    var s = (STRINGS[lang] && STRINGS[lang][key]) || STRINGS[DEFAULT_LANG][key] || key;
+    if (vars) {
+      Object.keys(vars).forEach(function (k) { s = s.split("{" + k + "}").join(vars[k]); });
+    }
+    return s;
+  }
+
+  // Applies translations to elements marked in the HTML:
+  // data-i18n (text), data-i18n-html, data-i18n-placeholder,
+  // data-i18n-title, data-i18n-aria-label.
+  function applyStatic(root) {
+    root = root || document;
+    document.documentElement.lang = lang;
+    root.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = t(el.dataset.i18n); });
+    root.querySelectorAll("[data-i18n-html]").forEach(function (el) { el.innerHTML = t(el.dataset.i18nHtml); });
+    root.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    root.querySelectorAll("[data-i18n-title]").forEach(function (el) { el.title = t(el.dataset.i18nTitle); });
+    root.querySelectorAll("[data-i18n-aria-label]").forEach(function (el) { el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel)); });
+  }
+
+  function setLang(next) {
+    if (!STRINGS[next] || next === lang) return false;
+    lang = next;
+    try { localStorage.setItem(STORE_LANG, lang); } catch (_e) {}
+    applyStatic();
+    return true;
+  }
+
+  window.RV_I18N = {
+    t: t,
+    applyStatic: applyStatic,
+    setLang: setLang,
+    getLang: function () { return lang; },
+    languages: Object.keys(STRINGS)
+  };
+})();
