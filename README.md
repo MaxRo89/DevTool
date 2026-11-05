@@ -2,6 +2,8 @@
 
 See a page on several devices at once — iPhone, Android, tablets and desktop, side by side. Free and open source, built with Flask.
 
+![Responsive Viewer showing github.com on an iPhone 14 Pro, an iPhone 15 Pro Max and an iPad mini side by side, with the zoom control, the URL bar, and the Refresh and Add device buttons](Img/screenshot.png)
+
 - **Search bar**: type a URL and press Enter. Each screen requests the page with its device's User-Agent.
 - **Refresh**: reloads every screen and **clears all their cookies**. Use it instead of Cmd + R.
 - **Add device**: opens the device list; check or uncheck the ones you want. The more screens you add, the lower the zoom, so they all fit. Each screen has an ✕ to remove it.
