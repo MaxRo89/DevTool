@@ -9,6 +9,7 @@ separado por pantalla. /api/reset vacía todos esos frascos.
 
 import argparse
 import html
+import json
 import logging
 import os
 import re
@@ -66,28 +67,16 @@ def get_session(frame_id):
         return session
 
 
+FRAME_INJECT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "js", "frame-inject.js")
+
+
 def frame_script(frame_id, device_id):
-    """Script que se inyecta en cada página para que los enlaces sigan
-    pasando por el proxy (y así conserven el User-Agent del dispositivo)."""
-    return f"""<script>(function(){{
-  var F={frame_id!r}, D={device_id!r};
-  function via(u){{
-    return location.origin + '/proxy?frame=' + encodeURIComponent(F) +
-      '&device=' + encodeURIComponent(D) + '&url=' + encodeURIComponent(u);
-  }}
-  document.addEventListener('click', function(e){{
-    var a = e.target.closest && e.target.closest('a[href]');
-    if (!a || e.defaultPrevented || e.button !== 0) return;
-    if (a.target && a.target !== '_self') return;
-    var href = a.href;
-    if (!/^https?:/i.test(href)) return;
-    var here = document.baseURI.split('#')[0];
-    if (href.split('#')[0] === here && href.indexOf('#') > -1) return;
-    e.preventDefault();
-    location.href = via(href);
-  }}, true);
-  try {{ parent.postMessage({{type:'rv:navigated', frame:F, url:document.baseURI}}, location.origin); }} catch (_e) {{}}
-}})();</script>"""
+    """Script que se inyecta en cada página para que enlaces, formularios y
+    peticiones sigan pasando por el proxy (ver static/js/frame-inject.js)."""
+    with open(FRAME_INJECT_PATH, encoding="utf-8") as f:
+        source = f.read()
+    source = source.replace("__FRAME__", json.dumps(frame_id)).replace("__DEVICE__", json.dumps(device_id))
+    return "<script>" + source.replace("</", "<\\/") + "</script>"
 
 
 # Mensajes que se muestran dentro de una pantalla cuando la página no carga.
@@ -130,7 +119,12 @@ def index():
     )
 
 
-@app.route("/proxy")
+# Cabeceras de la petición que sí se reenvían al sitio (además de las que
+# empiezan con X-, como X-Requested-With o X-CSRF-Token).
+FORWARDED_REQUEST_HEADERS = ("Content-Type", "Authorization")
+
+
+@app.route("/proxy", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 def proxy():
     url = (request.args.get("url") or "").strip()
     frame_id = re.sub(r"[^A-Za-z0-9_-]", "", request.args.get("frame", ""))[:64] or "default"
@@ -149,10 +143,26 @@ def proxy():
         ),
         "Accept-Language": request.headers.get("Accept-Language", "en-US,en;q=0.9"),
     }
+    for name in FORWARDED_REQUEST_HEADERS:
+        if name in request.headers:
+            headers[name] = request.headers[name]
+    for name, value in request.headers.items():
+        if name.lower().startswith("x-") and not name.lower().startswith("x-forwarded"):
+            headers[name] = value
+
+    data = None
+    if request.method != "GET":
+        data = request.get_data()
+        # Muchos sitios rechazan un POST (login, CSRF) si Origin/Referer no son
+        # los suyos. El navegador mandaría los del visor, así que ponemos los del sitio.
+        site = f"{parsed.scheme}://{parsed.netloc}"
+        headers["Origin"] = site
+        headers["Referer"] = site + "/"
 
     try:
-        upstream = get_session(frame_id).get(
-            url, headers=headers, timeout=REQUEST_TIMEOUT, allow_redirects=True
+        upstream = get_session(frame_id).request(
+            request.method, url, headers=headers, data=data,
+            timeout=REQUEST_TIMEOUT, allow_redirects=True,
         )
     except requests.exceptions.Timeout:
         return error_page("timeout", url)
@@ -162,7 +172,11 @@ def proxy():
     content_type = upstream.headers.get("Content-Type", "")
     body = upstream.content
 
-    if "text/html" in content_type:
+    # Solo se inyecta en documentos que se van a mostrar en una pantalla; un
+    # fragmento HTML pedido con fetch (por ejemplo htmx) se deja intacto.
+    is_document = request.headers.get("Sec-Fetch-Dest", "iframe") in ("iframe", "frame", "document")
+
+    if "text/html" in content_type and is_document:
         if "charset" not in content_type.lower():
             # Sin charset en la cabecera, requests asume ISO-8859-1; mejor adivinar.
             upstream.encoding = upstream.apparent_encoding or "utf-8"

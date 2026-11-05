@@ -71,7 +71,8 @@ The screens are iframes, but they don't load the site directly. They go through 
 
 1. downloads the page with the device's User-Agent,
 2. removes the headers that block showing it inside an iframe (`X-Frame-Options`, `Content-Security-Policy`),
-3. keeps cookies in a separate jar for each screen.
+3. keeps cookies in a separate jar for each screen, so each screen has its own login,
+4. injects a small script (`static/js/frame-inject.js`) so links, forms and `fetch` / `XMLHttpRequest` calls keep going through the proxy.
 
 **Refresh** calls `/api/reset`, which empties those jars and responds with `Clear-Site-Data: "cookies"` so the browser also deletes any cookies the page set with JavaScript.
 
@@ -85,15 +86,16 @@ Interface strings live in `static/js/i18n.js`. Copy the `en` block, translate it
 
 ## Known limitations
 
-- Only the HTML document is requested with the device's User-Agent. Images, CSS and the page's `fetch` requests go straight to the site from your browser.
-- Sites that rely heavily on JavaScript requests to their own domain may fail because of CORS.
-- Forms that submit with POST don't go through the proxy yet.
+- Pages, links, forms (GET and POST, so logging in works) and the page's `fetch` / `XMLHttpRequest` calls go through the proxy with the device's User-Agent. Images, CSS, scripts and fonts load straight from the site.
+- "Sign in with Google / Apple" and other sign-in pages hosted on another company's domain usually won't work inside a screen: those providers block being shown in frames or proxied.
+- WebSockets aren't proxied.
 
 ## Security
 
 This tool is meant to run **on your own computer**. Don't deploy it to a public server:
 
 - `/proxy` downloads any `http`/`https` URL, including addresses on your local network.
+- When you log in to a site inside a screen, your password goes through this local server on its way to the site. Session cookies are kept only in memory and are deleted with **Refresh** or when you stop the viewer.
 - Loaded pages run on the same origin as the viewer (the iframe has `allow-scripts` and `allow-same-origin` so cookies and `localStorage` work). Only open sites you trust.
 
 ## Project layout
